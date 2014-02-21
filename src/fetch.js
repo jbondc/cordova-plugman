@@ -87,7 +87,7 @@ module.exports = function fetchPlugin(plugin_src, plugins_dir, options) {
             local_dir = findLocalPlugin(plugin_src, options.searchpath);
             if (local_dir) {
                 p = Q(local_dir);
-                events.emit('log', 'Found plugin "' + plugin_src + '" at: ' + local_dir);
+                events.emit('verbose', 'Found plugin "' + plugin_src + '" at: ' + local_dir);
                 meta.source.path = local_dir;
 
             } else {

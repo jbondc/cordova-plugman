@@ -12,7 +12,7 @@ var path = require('path'),
     shell   = require('shelljs'),
     events = require('./events'),
     plugman = require('../plugman'),
-    isWindows = (os.platform() === 'win32');
+    isWindows = (os.platform().substr(0,3) === 'win');
 
 /* INSTALL FLOW
    ------------
@@ -219,37 +219,21 @@ var platformConfig = {};
 // possible options: cli_variables, www_dir, is_top_level
 // Returns a promise.
 var runInstall = module.exports.runInstall = function runInstall(actions, platform, project_dir, plugin_dir, plugins_dir, options) {
+    var xml_path     = path.join(plugin_dir, 'plugin.xml')
+      , plugin_et    = xml_helpers.parseElementtreeSync(xml_path)
+      , filtered_variables = {};
+    var name         = plugin_et.findall('name').text;
+    var plugin_id    = plugin_et.getroot().attrib['id'];
 
-    var xml_path     = path.join(plugin_dir, 'plugin.xml'),
-        filtered_variables = {}, key;
-
-    var plugin_et  = xml_helpers.parseElementtreeSync(xml_path),
-        name       = plugin_et.findall('name').text,
-        plugin_id  = plugin_et.getroot().attrib['id'];
-
-    var desc = '"' + plugin_id + '"' + (name ? ' ('+ name +')' : '');
-
-    events.emit('log', 'Starting installation of ' + desc +' for ' + platform);
-
-    var platform_config = config_changes.get_platform_json(plugins_dir, platform);
-
-    // check if platform has plugin installed already.
-    var is_installed = false;
-    Object.keys(platform_config.installed_plugins).forEach(function(installed_plugin_id) {
-        if (installed_plugin_id == plugin_id) {
-            is_installed = true;
+    if (isPluginInstalled(plugins_dir, platform, plugin_id)) {
+        if (options.is_top_level) {
+            events.emit('results', 'Plugin "' + plugin_id + '" already installed on ' + platform + '.');
+        } else {
+            events.emit('verbose', 'Dependent plugin "' + plugin_id + '" already installed on ' + platform + '.');
         }
-    });
-    Object.keys(platform_config.dependent_plugins).forEach(function(installed_plugin_id) {
-        if (installed_plugin_id == plugin_id) {
-            is_installed = true;
-        }
-    });
-
-    if (is_installed) {
-        events.emit('results', 'Plugin "' + plugin_id + '" already installed, \'sall good.');
-        return Q(true);
+        return Q();
     }
+    events.emit('log', 'Installing "' + plugin_id + '" for ' + platform);
 
     var theEngines = getEngines(plugin_et, platform, project_dir, plugin_dir);
 
@@ -295,7 +279,7 @@ var runInstall = module.exports.runInstall = function runInstall(actions, platfo
     ).then(
         function(){
             var install_plugin_dir = path.join(plugins_dir, plugin_id);
-    
+
             // may need to copy to destination...
             if ( !fs.existsSync(install_plugin_dir) ) {
                 copyPlugin(plugin_dir, plugins_dir, options.link);
@@ -502,10 +486,10 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
             // call prepare after a successful install
             plugman.prepare(project_dir, platform, plugins_dir, www_dir);
 
-            events.emit('log', plugin_id + ' installed on ' + platform + '.');
+            events.emit('verbose', 'Install complete for ' + plugin_id + ' on ' + platform + '.');
+
             // WIN!
             // Log out plugin INFO element contents in case additional install steps are necessary
-
             var info = plugin_et.findall('./info');
             if(info.length) {
                 events.emit('results', interp_vars(filtered_variables, info[0].text));

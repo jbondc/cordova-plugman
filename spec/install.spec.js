@@ -173,6 +173,19 @@ describe('install', function() {
         it('should call the config-changes module\'s add_installed_plugin_to_prepare_queue method after processing an install', function() {																												
            expect(results['config_add']).toEqual([plugins_install_dir, dummy_id, 'android', {}, true]);
         });
+        it('should notify if plugin is already installed into project', function() {
+            var spy = spyOn(plugman, 'emit');
+            get_json.andReturn({
+                installed_plugins:{
+                    'com.phonegap.plugins.dummyplugin':{}
+                },
+                dependent_plugins:{}
+            });
+            installPromise(install('android', temp, dummyplugin, plugins_dir, {}));
+            waitsFor(function() { return done; }, 'install promise never resolved', 500);
+            runs(function() {
+                expect(spy).toHaveBeenCalledWith('results', 'Plugin "'+dummy_id+'" already installed on android.');
+            });
 
         it('should queue up actions as appropriate for that plugin and call process on the action stack', 			
            function() {																											 				expect(results['actions_callCount']).toEqual(5);

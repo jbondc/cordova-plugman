@@ -61,11 +61,11 @@ module.exports = {
             var src = el.attrib.src;
             var target = path.join(el.attrib.target);
             require('../../plugman').emit('verbose', 'Copying resource file ' + src + ' to ' + target);
-            common.copyFile(plugin_dir, src, project_dir, target);
+            common.copyFile(plugin_dir, src, project_dir, path.normalize(target));
         },
         uninstall:function(el, project_dir) {
             var target = path.join(el.attrib.target);
-            common.removeFile(project_dir, target);
+            common.removeFile(project_dir, path.normalize(target));
         }
     }
 };
