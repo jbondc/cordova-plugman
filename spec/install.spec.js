@@ -173,20 +173,6 @@ describe('install', function() {
         it('should call the config-changes module\'s add_installed_plugin_to_prepare_queue method after processing an install', function() {																												
            expect(results['config_add']).toEqual([plugins_install_dir, dummy_id, 'android', {}, true]);
         });
-        it('should notify if plugin is already installed into project', function() {
-            var spy = spyOn(plugman, 'emit');
-            get_json.andReturn({
-                installed_plugins:{
-                    'com.phonegap.plugins.dummyplugin':{}
-                },
-                dependent_plugins:{}
-            });
-            installPromise(install('android', temp, dummyplugin, plugins_dir, {}));
-            waitsFor(function() { return done; }, 'install promise never resolved', 500);
-            runs(function() {
-                expect(spy).toHaveBeenCalledWith('results', 'Plugin "'+dummy_id+'" already installed on android.');
-            });
-
         it('should queue up actions as appropriate for that plugin and call process on the action stack', 			
            function() {																											 				expect(results['actions_callCount']).toEqual(5);
                 expect(results['actions_create']).toEqual([jasmine.any(Function), [jasmine.any(Object), path.join(plugins_install_dir, dummy_id), project, dummy_id], jasmine.any(Function), [jasmine.any(Object), project, dummy_id]]);
@@ -309,14 +295,14 @@ describe('install', function() {
                     // Look for 'Installing plugin ...' in events
                     var install = [], i;
                     for(i in emit.argsForCall) {
-                        if(emit.argsForCall[i][1].substr(0, 10) === 'Installing')
+                        if(emit.argsForCall[i][1].substr(0, 13) === 'Install start')
                             install.push(emit.argsForCall[i][1]);
                     }
 
                     expect(install).toEqual([
-                        "Installing plugin C",
-                        "Installing plugin D",
-                        "Installing plugin A"
+                        'Install start for "C" on android.',
+                        'Install start for "D" on android.',
+                        'Install start for "A" on android.'
                     ]);
                 });
             });
@@ -337,14 +323,14 @@ describe('install', function() {
                     // TODO: this is same test as above? Need test other dependency with url=?
                     var install = [], i;
                     for(i in emit.argsForCall) {
-                        if(emit.argsForCall[i][1].substr(0, 10) === 'Installing')
+                        if(emit.argsForCall[i][1].substr(0, 13) === 'Install start')
                             install.push(emit.argsForCall[i][1]);
                     }
 
                     expect(install).toEqual([
-                        "Installing plugin C",
-                        "Installing plugin D",
-                        "Installing plugin A"
+                        'Install start for "C" on android.',
+                        'Install start for "D" on android.',
+                        'Install start for "A" on android.'
                     ]);;
                 });
             });

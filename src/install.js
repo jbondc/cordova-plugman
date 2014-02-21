@@ -434,7 +434,8 @@ function installDependency(dep, install, options) {
 function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plugins_dir, plugin_dir, filtered_variables, www_dir, is_top_level) {
 
     // @tests - important this event is checked spec/install.spec.js
-    events.emit('verbose', 'Installing plugin ' + plugin_id);
+    events.emit('verbose', 'Install start for "' + plugin_id + '" on ' + platform + '.');
+
     var handler = platform_modules[platform];
     www_dir = www_dir || handler.www_dir(project_dir);
 
@@ -486,7 +487,7 @@ function handleInstall(actions, plugin_id, plugin_et, platform, project_dir, plu
             // call prepare after a successful install
             plugman.prepare(project_dir, platform, plugins_dir, www_dir);
 
-            events.emit('verbose', 'Install complete for ' + plugin_id + ' on ' + platform + '.');
+            events.emit('verbose', 'Install complete for "' + plugin_id + '" on ' + platform + '.');
 
             // WIN!
             // Log out plugin INFO element contents in case additional install steps are necessary
@@ -542,4 +543,19 @@ function copyPlugin(plugin_src_dir, plugins_dir, link) {
     }
 
     return dest;
+}
+
+function isPluginInstalled(plugins_dir, platform, plugin_id) {
+    var platform_config = config_changes.get_platform_json(plugins_dir, platform);
+    for (var installed_plugin_id in platform_config.installed_plugins) {
+        if (installed_plugin_id == plugin_id) {
+            return true;
+        }
+    }
+    for (var installed_plugin_id in platform_config.dependent_plugins) {
+        if (installed_plugin_id == plugin_id) {
+            return true;
+        }
+    }
+    return false;
 }
