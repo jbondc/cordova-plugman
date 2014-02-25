@@ -6,7 +6,7 @@ var shell   = require('shelljs'),
     metadata = require('./util/metadata'),
     path    = require('path'),
     Q       = require('q'),
-    events  = require('../plugman'),
+    events  = require('./events'),
     registry = require('./registry/registry');
 
 // possible options: link, subdir, git_ref, client, expected_id

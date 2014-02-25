@@ -169,22 +169,22 @@ plugman.commands =  {
     },
 
     'publish'  : function(command) {
-        var plugin_path = command.remain;
-        if(!plugin_path) {
+        var args = command.remain;
+        if(!args.length) {
             return console.log(plugman.help());
         }
-        plugman.publish(plugin_path, function(err) {
+        plugman.publish(args, function(err) {
             if (err) throw err;
             else console.log('Plugin published');
         });
     },
 
     'unpublish': function(command) {
-        var plugin = command.remain;
-        if(!plugin) {
+        var args = command.remain;
+        if(!args.length) {
             return console.log(plugman.help());
         }
-        plugman.unpublish(plugin, function(err) {
+        plugman.unpublish(args, function(err) {
             if (err) throw err;
             else console.log('Plugin unpublished');
         });
