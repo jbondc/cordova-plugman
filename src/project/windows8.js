@@ -1,18 +1,13 @@
 var path      = require('path'),
     fs        = require('fs'),
     windows8  = require('../platforms/windows8'),
-    project   = require('../project');
+    wp8       = require('../project/wp8');
 
 var winProject = function(){
-    project.cordova.apply(this, arguments);
+    wp8.apply(this, arguments);
     this._solution = windows8.parseProjectFile(this._root);
 };
 
-winProject.prototype = new project.cordova;
-winProject.prototype.saveFile = function(path, data) {
-    this._solution.addSourceFile(path);
-
-    return project.cordova.apply(this, arguments);
-}
+winProject.prototype = new wp8;
 
 module.exports = winProject;

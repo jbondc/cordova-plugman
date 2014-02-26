@@ -4,13 +4,18 @@ var path            = require('path'),
     events          = require('./events'),
     config_changes  = require('./util/config-changes');
 
-var project = function(path){
+var project = function(path, pluginsDir){
     this._root = path;
+	this._pluginsDir = pluginsDir || path.join(this._root, 'cordova', 'plugins');
+    
+	// not ideal... go up to find cli directory
+    if( !fs.existsSync(this._pluginsDir) )
+        this._pluginsDir = path.join(this._root, '..', '..', 'plugins'); // platforms/android/../../plugins	
 
     // 4.0
     // read from path/cordova/project.json
     this._meta = {};
-    
+	this.checkValid();
 };
 
 project.prototype.getPlatform = function(){
@@ -25,14 +30,13 @@ project.prototype.getVersion = function(){
     if(this._meta.version)
         return this._meta.version;
 
-    var binPath = path.join(this._root, 'cordova', 'version');
-    
-    // exec sync?
-    return '3.0.0';
-    
+    return '3.x';    
 };
 
-project.prototype.isValid = function(){
+project.prototype.checkValid = function(){
+
+	if( !fs.existsSync(this._pluginsDir) )
+		throw new Error("Could not find plugins directory at "+ this._root);	
 };
 
 project.prototype.getPaths = function(){
@@ -47,37 +51,27 @@ project.prototype.saveFile = function(path, data){
 
 
 project.prototype.getPlugins = function(){
-    var plugins_dir = this._getPluginsDir();
-
-    var json = config_changes.get_platform_json(plugins_dir, this.platform);
+    var json = config_changes.get_platform_json(this._pluginsDir, this.platform);
 
     return Object.keys(json.installed_plugins).concat( Object.keys(json.dependent_plugins) );	
 };
 
-project.prototype._getPluginsDir = function(){
-    // 3.x -- temp stuff
-    // plugman only 
-    var plugins_dir = path.join(this._root, 'cordova', 'plugins');
-
-    // not ideal... go up to find cli directory
-    if( !fs.existsSync(plugins_dir) )
-        plugins_dir = path.join(this._root, '..', '..', 'plugins'); // platforms/android/../../plugins
-
-    return plugins_dir;
-};
-
 // Update project meta data
 project.prototype.updateMeta = function(){
+
+}
+
+// Update project generated www data
+project.prototype.updateRuntime = function(){
     var paths = this.getPaths(),
         plugins = this.getPlugins();
 
-    var plugins_dir = this._getPluginsDir();
     var moduleObjects = [];
     var pluginMetadata = {};
     var wwwDir = paths['www'];
 
     plugins.forEach(function(plugin) {
-        var pluginDir = path.join(plugins_dir, plugin);
+        var pluginDir = path.join(this._pluginsDir, plugin);
 
         if( !fs.statSync(pluginDir).isDirectory() ) {
             events.emit("warn", "Missing plugin '"+ plugin +"', not found at "+ pluginDir);
@@ -165,6 +159,11 @@ project.prototype.updateMeta = function(){
 
     events.emit('verbose', 'Writing out cordova_plugins.js...');
     this.saveFile(path.join(wwwDir, 'cordova_plugins.js'), final_contents);
+}
+
+project.prototype.update = function(){
+    this.updateMeta();
+	this.updateRuntime();
 }
 
 var proj = {
