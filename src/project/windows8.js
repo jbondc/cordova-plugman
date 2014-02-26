@@ -1,13 +1,19 @@
 var path      = require('path'),
     fs        = require('fs'),
-    windows8  = require('../platforms/windows8'),
+    csproj    = require('../util/csproj'),
+	project   = require('../project'),
     wp8       = require('../project/wp8');
 
-var winProject = function(){
-    wp8.apply(this, arguments);
-    this._solution = windows8.parseProjectFile(this._root);
+var win = function(){
+    project.cordova.apply(this, arguments);
+
+	var config = wp8.findConfig('*.jsproj', this._root);
+	if(!config)
+		 throw new Error('Invalid Windows Store JS project (no .jsproj file in "'+ this._root +'")');		
+
+    this._solution = new csproj( path.join(this._root, config) );
 };
 
-winProject.prototype = new wp8;
+win.prototype = Object.create(wp8).prototype;
 
-module.exports = winProject;
+module.exports = win;

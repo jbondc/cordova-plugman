@@ -1,16 +1,48 @@
 var path      = require('path'),
     fs        = require('fs'),
-    windows   = require('../platforms/wp8'),
+	glob      = require('glob'),
+    csproj    = require('../util/csproj'),
     project   = require('../project');
 
-var winProject = function(){
+var parent = project.cordova.prototype;
+var win = function(){
     project.cordova.apply(this, arguments);
-    this._solution = windows.parseProjectFile(this._root);
+
+	var config = win.findConfig('*.csproj', this._root);
+	if(!config)
+		 throw new Error('Invalid Windows Phone project (no .csproj file in "'+ this._root +'")');		
+
+    this._solution = new csproj( path.join(this._root, config) );
 };
 
-winProject.prototype = new project.cordova;
+win.findConfig = function(ext, root) {
+	var project_files = glob.sync(ext, {
+		cwd: root
+	});
 
-winProject.prototype.checkFiles = function(){
+	return project_files[0] || false;
+};
+
+win.prototype = Object.create(project.cordova).prototype;
+
+win.prototype.saveFile = function(path, data) {
+    if( parent.saveFile.apply(this, arguments) ) {
+		this._solution.addSourceFile(path);
+		return true;
+	}
+
+	return false;
+}
+
+win.prototype.updateRuntime = function() {
+	this.checkFiles();
+
+	parent.updateRuntime.call(this, arguments);
+
+   	this._solution.write();
+}
+
+win.prototype.checkFiles = function(){
 	var paths = this.getPaths();
 	var wwwPath = paths['www'];
 
@@ -36,10 +68,5 @@ winProject.prototype.checkFiles = function(){
 		}
 	} 
 };
-winProject.prototype.saveFile = function(path, data) {
-    this._solution.addSourceFile(path);
 
-    return project.cordova.apply(this, arguments);
-}
-
-module.exports = winProject;
+module.exports = win;

@@ -4,17 +4,15 @@ var path            = require('path'),
     events          = require('./events'),
     config_changes  = require('./util/config-changes');
 
-var project = function(path, pluginsDir){
-    this._root = path;
-	this._pluginsDir = pluginsDir || path.join(this._root, 'cordova', 'plugins');
-    
-	// not ideal... go up to find cli directory
-    if( !fs.existsSync(this._pluginsDir) )
-        this._pluginsDir = path.join(this._root, '..', '..', 'plugins'); // platforms/android/../../plugins	
+var project = function(dirPath, pluginsDir){
+    this._root = path.resolve(dirPath || "");
+	this._pluginsDir = path.resolve(pluginsDir) || path.resolve(this._root, 'cordova', 'plugins');
 
     // 4.0
     // read from path/cordova/project.json
     this._meta = {};
+	this.platform = "";
+
 	this.checkValid();
 };
 
@@ -36,7 +34,7 @@ project.prototype.getVersion = function(){
 project.prototype.checkValid = function(){
 
 	if( !fs.existsSync(this._pluginsDir) )
-		throw new Error("Could not find plugins directory at "+ this._root);	
+		throw new Error("Could not find plugins directory for project '"+ this._root + "' ("+ this._pluginsDir +")");	
 };
 
 project.prototype.getPaths = function(){
@@ -170,7 +168,7 @@ var proj = {
 
     cordova: project,
 
-    forPlatform: function(platform, path){
+    forPlatform: function(platform, path, pluginsDir){
         var p;
 
         switch(platform) {
@@ -180,8 +178,10 @@ var proj = {
                 break;
 
             default:
-                p = new project(path);
+                p = project;
         }
+console.log(p);
+		p = new p(path, pluginsDir);
         p.platform = platform;
 
         return p;
@@ -189,4 +189,4 @@ var proj = {
     
 };
 
-modules.exports = proj;
+module.exports = proj;
